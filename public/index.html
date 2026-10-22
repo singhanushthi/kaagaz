@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kaagaz</title>
+<meta name="description" content="Write your day. Get back a poem, in your own words. English, हिंदी or Hinglish.">
+<meta name="theme-color" content="#E4EBE3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C2124" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Kaagaz">
+<meta property="og:description" content="Write your day. Get back a poem.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kaagaz">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Hind:wght@400;500;600&family=Tiro+Devanagari+Hindi&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!--BODY-->
+<a class="skip" href="#entry">Skip to writing</a>
+<main class="page">
+  <div class="top">
+    <div class="brand" aria-label="Kaagaz">
+      <span class="deva" lang="hi" aria-hidden="true">कागज़</span>
+      <span class="latin" aria-hidden="true">kaagaz</span>
+    </div>
+    <nav class="topnav" aria-label="App">
+      <a class="navlink" href="#diary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3Z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>
+        <span>My diary</span>
+      </a>
+      <button class="navlink" type="button" id="install" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7"/><path d="m9 11 3 3 3-3"/></svg>
+        <span>Install app</span>
+      </button>
+    </nav>
+  </div>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Write your day. <em>Get back a poem.</em></h1>
+      <p class="sub">In your own words. English, <span lang="hi">हिंदी</span> or Hinglish.</p>
+    </div>
+    <svg class="vine" viewBox="0 -40 150 340" aria-hidden="true" focusable="false">
+      <path class="stem draw" pathLength="1" d="M110 296 C 70 250, 140 210, 96 160 S 30 90, 84 52 S 128 14, 100 6"/>
+      <path class="stem draw" pathLength="1" style="stroke-width:1.1;animation-delay:.35s" d="M96 160 C 122 150, 138 126, 128 108 C 121 96, 106 101, 111 112"/>
+      <path class="stem draw" pathLength="1" style="stroke-width:1.1;animation-delay:.5s" d="M76 92 C 52 92, 36 76, 42 62 C 47 52, 60 56, 56 66"/>
+      <path class="leaf" transform="translate(104 228) rotate(165)" d="M0 0 C 14 -12, 34 -10, 42 0 C 34 10, 14 12, 0 0Z"/>
+      <path class="leaf" transform="translate(92 192) rotate(-25)" d="M0 0 C 12 -10, 28 -8, 34 0 C 28 8, 12 10, 0 0Z"/>
+      <path class="leaf" transform="translate(70 120) rotate(200)" d="M0 0 C 12 -10, 28 -8, 34 0 C 28 8, 12 10, 0 0Z"/>
+      <path class="leaf" transform="translate(90 44) rotate(-35)" d="M0 0 C 10 -8, 22 -7, 28 0 C 22 7, 10 8, 0 0Z"/>
+      <path class="bloom draw" pathLength="1" style="animation-delay:.7s" d="M100 6 C 86 -10, 72 -12, 70 2 M100 6 C 114 -12, 130 -10, 128 4 M100 6 C 92 -14, 96 -26, 100 -30 C 104 -26, 108 -14, 100 6"/>
+      <circle class="bud" cx="100" cy="-34" r="3"/>
+    </svg>
+  </section>
+
+  <form class="compose" id="f" novalidate>
+    <div class="plate">
+      <div class="plate-head">
+        <label class="label" for="entry">Your page</label>
+        <div class="datefield">
+          <label for="entryDate">For</label>
+          <input type="date" id="entryDate" name="entryDate" required>
+        </div>
+      </div>
+      <textarea id="entry" name="entry" maxlength="80000" aria-describedby="count entryErr"
+        placeholder="Aaj ka din kaisa tha? Kya dekha, kya mehsoos kiya… just write."></textarea>
+      <div class="meta"><span id="count">0 / 10,000 words</span></div>
+    </div>
+    <p class="err" id="entryErr" hidden>Write a line or two about your day first.</p>
+
+    <div class="controls">
+      <fieldset class="seg">
+        <legend class="sr">Poem language</legend>
+        <input type="radio" name="lang" id="l-auto" value="auto" checked><label for="l-auto">As I write</label>
+        <input type="radio" name="lang" id="l-en" value="en"><label for="l-en">English</label>
+        <input type="radio" name="lang" id="l-hi" value="hi"><label for="l-hi" lang="hi">हिंदी</label>
+        <input type="radio" name="lang" id="l-hing" value="hing"><label for="l-hing">Hinglish</label>
+      </fieldset>
+      <div class="pickers">
+        <div class="picker">
+          <label for="feel">Feel</label>
+          <select id="feel" name="feel">
+            <option value="hopeful">Gently hopeful</option>
+            <option value="true">True to my mood</option>
+          </select>
+        </div>
+        <div class="picker">
+          <label for="shape">Shape</label>
+          <select id="shape" name="shape">
+            <option value="free">Free verse</option>
+            <option value="nazm">Nazm</option>
+            <option value="short">Few lines</option>
+            <option value="rhyme">Soft rhyme</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="cta" type="submit" id="go">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span id="goLabel">Make it a poem</span>
+    </button>
+    <p class="err" id="runErr" role="alert" hidden></p>
+  </form>
+
+  <section class="result" id="result" aria-labelledby="ptitle">
+    <article class="window">
+      <span class="stamp" id="stamp">An example</span>
+      <div class="loading" id="loading" hidden>
+        <span>Reading your page…</span>
+        <span class="stroke" aria-hidden="true"></span>
+      </div>
+      <div id="out">
+        <h2 class="ptitle" id="ptitle">One more morning</h2>
+        <svg class="flourish" viewBox="0 0 132 20" aria-hidden="true" focusable="false"><path d="M2 10 C 30 10, 40 2, 54 8 C 60 11, 60 16, 66 16 C 72 16, 72 11, 78 8 C 92 2, 102 10, 130 10"/><circle cx="66" cy="6" r="2.2"/></svg>
+        <div class="poem" id="poem" aria-live="polite"></div>
+        <p class="sign" id="sign">kaagaz</p>
+        <details class="thoughts" id="thoughtsBox" hidden>
+          <summary>What you wrote that day</summary>
+          <p id="thoughtsText"></p>
+        </details>
+      </div>
+    </article>
+    <div class="actions">
+      <button class="btn" type="button" id="copy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        Copy
+      </button>
+      <button class="btn" type="button" id="save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Save as image
+      </button>
+      <button class="btn" type="button" id="again" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
+        Another version
+      </button>
+      <span class="toast" id="toast" role="status"></span>
+    </div>
+  </section>
+
+  <section class="diary" id="diary" aria-labelledby="diaryTitle" tabindex="-1">
+    <div class="diary-head">
+      <h2 id="diaryTitle">My diary</h2>
+      <span class="diary-count" id="diaryCount"></span>
+    </div>
+
+    <div class="account" id="account">
+      <p class="acc-local" id="accLocal">Your diary is saved on this device.</p>
+
+      <form class="acc-form" id="accForm" novalidate hidden>
+        <h3>Keep your diary on every device</h3>
+        <p class="acc-sub">Sign in with your email or phone number. We'll send a 6-digit code, no password needed.</p>
+        <fieldset class="seg seg-sm" id="accModes">
+          <legend class="sr">Sign in with</legend>
+          <input type="radio" name="accMode" id="m-email" value="email" checked><label for="m-email">Email</label>
+          <input type="radio" name="accMode" id="m-phone" value="phone"><label for="m-phone">Phone</label>
+        </fieldset>
+        <div class="field" id="idField">
+          <label for="accId" id="accIdLabel">Email</label>
+          <input id="accId" name="accId" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="accHint accErr">
+          <span class="hint" id="accHint"></span>
+        </div>
+        <div class="field" id="codeField" hidden>
+          <label for="accCode">6-digit code</label>
+          <input id="accCode" name="accCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-describedby="accErr">
+        </div>
+        <p class="err" id="accErr" role="alert" hidden></p>
+        <div class="acc-actions">
+          <button class="btn btn-solid" type="submit" id="accGo">Send code</button>
+          <button class="linkbtn" type="button" id="accBack" hidden>Use a different email</button>
+        </div>
+      </form>
+
+      <div class="acc-in" id="accIn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A7 7 0 0 1 20 10a4 4 0 0 1-1 8Z"/><path d="m9 13 2 2 4-4"/></svg>
+        <div class="acc-who">
+          <span>Signed in as <strong id="accWho"></strong></span>
+          <span class="acc-sync" id="accSync">Synced</span>
+        </div>
+        <button class="btn" type="button" id="signOut">Sign out</button>
+      </div>
+    </div>
+
+    <p class="diary-empty" id="diaryEmpty">Every page you turn into a poem is saved here by date, your words and the poem together.</p>
+    <ul class="diary-list" id="diaryList"></ul>
+  </section>
+
+  <footer>
+    <svg class="rule" viewBox="0 0 600 20" aria-hidden="true" focusable="false"><path d="M0 10 H 262 C 280 10, 286 2, 300 2 C 314 2, 320 10, 338 10 H 600 M286 12 C 292 18, 308 18, 314 12"/></svg>
+    <p id="privacy">Your diary stays on this device, or in your own account if you sign in. Only you can see it.</p>
+    <p id="iosHint" hidden>On iPhone: tap Share, then <strong>Add to Home Screen</strong> to install Kaagaz.</p>
+    <p>Going through something heavy? Tele-MANAS is free, any time: <strong>14416</strong>.</p>
+  </footer>
+</main>
+<!--/BODY-->
+<script type="module" src="app.js"></script>
+</body>
+</html>

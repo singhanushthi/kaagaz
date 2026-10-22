@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "Kaagaz",
+  "short_name": "Kaagaz",
+  "description": "Write your day. Get back a poem, in your own words. English, हिंदी or Hinglish.",
+  "lang": "en-IN",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E4EBE3",
+  "theme_color": "#1C565D",
+  "categories": ["lifestyle", "health", "books"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Write today's page", "url": "/?source=shortcut#entry", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My diary", "url": "/?source=shortcut#diary", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
