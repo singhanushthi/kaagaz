@@ -69,7 +69,7 @@ Optional settings:
 | Variable | What it does |
 |---|---|
 | `AI_MODEL` | Use a different model from that provider (copy the exact model name from their docs) |
-| `AI_PROVIDER` | If you added several keys, pick one: `groq`, `openrouter`, `openai`, `deepseek`, `claude` or `custom` |
+| `AI_PROVIDER` | Which AI to use: `groq`, `openrouter`, `openai`, `deepseek`, `claude` or `custom`. **Set this** (e.g. `groq`): Netlify's AI Gateway adds its own OpenAI/Anthropic keys to every site, and without it those would be picked first |
 
 **Tips**
 - Free models change often. If OpenRouter says a model is unavailable, pick another one ending in `:free`

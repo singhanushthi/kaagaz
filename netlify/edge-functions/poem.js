@@ -12,14 +12,16 @@
 import { buildPrompt, parsePoem, LANGS, SHAPES, FEELS } from "../../public/prompt.js";
 
 const PROVIDERS = {
-  openai:     { key: "OPENAI_API_KEY",     url: "https://api.openai.com/v1/chat/completions",          model: "gpt-6-luna", tokensField: "max_completion_tokens", noTemperature: true },
+  openai:     { key: "OPENAI_API_KEY",     url: "https://api.openai.com/v1/chat/completions",          model: "gpt-6-luna", tokensField: "max_completion_tokens", noTemperature: true, baseEnv: "OPENAI_BASE_URL", path: "/chat/completions" },
   groq:       { key: "GROQ_API_KEY",       url: "https://api.groq.com/openai/v1/chat/completions",     model: "openai/gpt-oss-120b" },
   openrouter: { key: "OPENROUTER_API_KEY", url: "https://openrouter.ai/api/v1/chat/completions",       model: "google/gemma-4-31b-it:free" },
   deepseek:   { key: "DEEPSEEK_API_KEY",   url: "https://api.deepseek.com/chat/completions",           model: "deepseek-chat" },
-  claude:     { key: "ANTHROPIC_API_KEY",  url: "https://api.anthropic.com/v1/messages",               model: "claude-sonnet-5-5" },
+  claude:     { key: "ANTHROPIC_API_KEY",  url: "https://api.anthropic.com/v1/messages",               model: "claude-sonnet-5-5", baseEnv: "ANTHROPIC_BASE_URL", path: "/v1/messages" },
   custom:     { key: "AI_API_KEY",         url: null,                                                  model: null },
 };
-// When several keys are set, use the one that writes the best poems.
+// When several keys are set (and AI_PROVIDER isn't), use the one that writes the best poems.
+// Note: Netlify's AI Gateway adds OPENAI_/ANTHROPIC_ keys to every site automatically, so set
+// AI_PROVIDER (e.g. "groq") to make sure your own key is the one used.
 const ORDER = ["claude", "openai", "deepseek", "groq", "openrouter", "custom"];
 
 const env = (k) => (globalThis.Netlify?.env?.get(k) ?? globalThis.process?.env?.[k] ?? "").trim();
@@ -32,6 +34,10 @@ function pickProvider() {
   const key = env(p.key);
   if (!key) return null;
   let url = p.url;
+  // Netlify AI Gateway provides its own base URL alongside its key; use it when present.
+  const gatewayBase = p.baseEnv && env(p.baseEnv).replace(/\/+$/, "");
+  // Same rule as the official SDKs: OpenAI base + "/chat/completions", Anthropic base + "/v1/messages".
+  if (gatewayBase) url = gatewayBase + p.path;
   if (name === "custom") {
     const base = env("AI_BASE_URL").replace(/\/+$/, "");
     if (!base) return null;
