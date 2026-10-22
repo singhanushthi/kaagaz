@@ -43,6 +43,17 @@
     </nav>
   </div>
 
+  <div class="install-help" id="installHelp" hidden>
+    <div class="install-head">
+      <h2>Add Kaagaz to your home screen</h2>
+      <button class="iconbtn" type="button" id="installClose" aria-label="Close install steps">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <ol id="installSteps"></ol>
+    <p class="install-note">It opens full screen with its own icon, like any other app.</p>
+  </div>
+
   <section class="hero">
     <div class="hero-text">
       <h1>Write your day. <em>Get back a poem.</em></h1>
@@ -155,32 +166,19 @@
     <div class="account" id="account">
       <p class="acc-local" id="accLocal">Your diary is saved on this device.</p>
 
-      <form class="acc-form" id="accForm" novalidate hidden>
-        <h3>Keep your diary on every device</h3>
-        <p class="acc-sub">Sign in with your email or phone number. We'll send a 6-digit code, no password needed.</p>
-        <fieldset class="seg seg-sm" id="accModes">
-          <legend class="sr">Sign in with</legend>
-          <input type="radio" name="accMode" id="m-email" value="email" checked><label for="m-email">Email</label>
-          <input type="radio" name="accMode" id="m-phone" value="phone"><label for="m-phone">Phone</label>
-        </fieldset>
-        <div class="field" id="idField">
-          <label for="accId" id="accIdLabel">Email</label>
-          <input id="accId" name="accId" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="accHint accErr">
-          <span class="hint" id="accHint"></span>
-        </div>
-        <div class="field" id="codeField" hidden>
-          <label for="accCode">6-digit code</label>
-          <input id="accCode" name="accCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-describedby="accErr">
-        </div>
+      <div class="acc-form" id="accForm" hidden>
+        <h3>Keep your diary safe with Google</h3>
+        <p class="acc-sub">Sign in with your Google account and your diary opens on any phone or computer. No password to remember.</p>
+        <button class="gbtn" type="button" id="googleBtn">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+          <span>Continue with Google</span>
+        </button>
         <p class="err" id="accErr" role="alert" hidden></p>
-        <div class="acc-actions">
-          <button class="btn btn-solid" type="submit" id="accGo">Send code</button>
-          <button class="linkbtn" type="button" id="accBack" hidden>Use a different email</button>
-        </div>
-      </form>
+      </div>
 
       <div class="acc-in" id="accIn" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A7 7 0 0 1 20 10a4 4 0 0 1-1 8Z"/><path d="m9 13 2 2 4-4"/></svg>
+        <img class="avatar" id="accPic" alt="" width="40" height="40" hidden referrerpolicy="no-referrer">
+        <svg class="acc-cloud" id="accCloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A7 7 0 0 1 20 10a4 4 0 0 1-1 8Z"/><path d="m9 13 2 2 4-4"/></svg>
         <div class="acc-who">
           <span>Signed in as <strong id="accWho"></strong></span>
           <span class="acc-sync" id="accSync">Synced</span>
@@ -196,7 +194,6 @@
   <footer>
     <svg class="rule" viewBox="0 0 600 20" aria-hidden="true" focusable="false"><path d="M0 10 H 262 C 280 10, 286 2, 300 2 C 314 2, 320 10, 338 10 H 600 M286 12 C 292 18, 308 18, 314 12"/></svg>
     <p id="privacy">Your diary stays on this device, or in your own account if you sign in. Only you can see it.</p>
-    <p id="iosHint" hidden>On iPhone: tap Share, then <strong>Add to Home Screen</strong> to install Kaagaz.</p>
     <p>Going through something heavy? Tele-MANAS is free, any time: <strong>14416</strong>.</p>
   </footer>
 </main>

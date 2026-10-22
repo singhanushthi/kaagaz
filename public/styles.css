@@ -303,3 +303,31 @@ body { padding-block: max(24px, env(safe-area-inset-top, 0px)) max(48px, env(saf
 .entry-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .entry-wrote { font-size: .85rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; }
 .entry-pending { font-size: .75rem; color: var(--wine); }
+
+/* ---------- Google sign-in ---------- */
+.gbtn {
+  align-self: flex-start; min-height: 48px; display: inline-flex; align-items: center; gap: 12px;
+  padding: 0 20px 0 14px; border: 1px solid var(--rule); border-radius: 24px; cursor: pointer;
+  background: #FFFFFF; color: #1F1F1F; font: inherit; font-weight: 500; font-size: 1rem;
+  box-shadow: 0 1px 2px rgb(var(--shade) / .12); transition: box-shadow var(--fast), transform var(--fast) var(--ease);
+}
+.gbtn:hover { box-shadow: 0 4px 12px -4px rgb(var(--shade) / .35); }
+.gbtn:active { transform: scale(.98); }
+.gbtn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.gbtn[disabled] { opacity: .7; cursor: progress; }
+.gbtn svg { width: 20px; height: 20px; flex: none; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; flex: none; border: 1px solid var(--gold); object-fit: cover; }
+.acc-cloud { width: 26px; height: 26px; color: var(--peacock); flex: none; }
+
+/* ---------- Install steps ---------- */
+.install-help { position: relative; background: var(--sheet); border-radius: var(--r-m); padding: 18px 18px 16px; box-shadow: 0 1px 2px rgb(var(--shade) / .08), 0 18px 36px -26px rgb(var(--shade) / .45); }
+.install-help::before { content: ""; position: absolute; inset: 6px; border: 1px solid var(--gold); border-radius: 10px; opacity: .45; pointer-events: none; }
+.install-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.install-help h2 { margin: 6px 0 0; font-family: var(--display); font-style: italic; font-weight: 500; font-size: 1.45rem; line-height: 1.2; color: var(--wine); }
+.install-help ol { position: relative; margin: 10px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.install-help li { padding-left: 4px; }
+.install-note { position: relative; margin: 10px 0 0; font-size: .88rem; color: var(--ink-2); }
+.iconbtn { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 22px; background: none; color: var(--ink-2); cursor: pointer; }
+.iconbtn:hover { color: var(--ink); background: var(--ground); }
+.iconbtn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.iconbtn svg { width: 20px; height: 20px; }

@@ -1,6 +1,6 @@
 // Kaagaz service worker: makes the app open instantly and work offline.
 // Poems are written online (/api/poem is never cached).
-const VERSION = "kaagaz-v2";
+const VERSION = "kaagaz-v3";
 const SHELL = [
   "/",
   "/index.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "/prompt.js",
   "/manifest.webmanifest",
   "/favicon.svg",
+  "/vendor/identity.js",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
 ];
@@ -29,11 +30,11 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (url.pathname.startsWith("/api/")) return;
-  if (url.hostname.endsWith(".supabase.co")) return; // account data is never cached by the worker
+  // Poems, the diary and sign-in always go to the network, never the cache.
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/.netlify/")) return;
 
-  // Fonts and the sign-in library: serve from cache, refresh in the background.
-  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com" || url.hostname === "cdn.jsdelivr.net") {
+  // Fonts: serve from cache, refresh in the background.
+  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") {
     e.respondWith(
       caches.open(VERSION).then(async (c) => {
         const hit = await c.match(req);

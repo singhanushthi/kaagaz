@@ -1,0 +1,10 @@
+{
+  "name": "kaagaz",
+  "private": true,
+  "type": "module",
+  "description": "Write your day. Get back a poem.",
+  "dependencies": {
+    "@netlify/blobs": "11.1.6",
+    "@netlify/identity": "2.0.0"
+  }
+}

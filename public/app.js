@@ -337,15 +337,22 @@ function loadLocal() {
   sortEntries();
 }
 
-const cloud = { client: null, user: null, ready: false };
-const toRow = (e) => ({
-  id: e.id, entry_date: e.date, thoughts: e.thoughts || "", title: e.title || "", poem: e.poem,
-  lang: e.lang || null, shape: e.shape || null, feel: e.feel || null, created_at: e.createdAt, updated_at: e.updatedAt,
-});
-const fromRow = (r) => ({
-  id: r.id, date: r.entry_date, thoughts: r.thoughts || "", title: r.title, poem: r.poem,
-  lang: r.lang, shape: r.shape, feel: r.feel, createdAt: r.created_at, updatedAt: r.updated_at, synced: true,
-});
+const cloud = { id: null, user: null, ready: false, google: false };
+const strip = ({ synced, ...rest }) => rest;
+
+// Talks to /api/diary (Netlify Function). The sign-in cookie is sent automatically.
+async function api(method, body, query = "") {
+  try { await cloud.id?.refreshSession(); } catch {}
+  const res = await fetch("/api/diary" + query, {
+    method,
+    credentials: "same-origin",
+    headers: body ? { "content-type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401) { setTimeout(() => setUser(null), 0); throw new Error("signed_out"); }
+  if (!res.ok) throw new Error("http_" + res.status);
+  return res.json();
+}
 
 async function saveEntry(e) {
   const rec = { ...e, synced: false };
@@ -358,23 +365,28 @@ async function saveEntry(e) {
 async function pushPending() {
   if (!cloud.user) return;
   const pending = entries.filter((e) => !e.synced);
-  if (!pending.length) { setSync("Synced"); return; }
-  setSync("Syncing…");
-  const { error } = await cloud.client.from("entries").upsert(pending.map(toRow));
-  if (error) { setSync("Not synced yet. Will retry."); return; }
-  pending.forEach((e) => { e.synced = true; });
-  persistLocal(); renderDiary(); setSync("Synced");
+  if (!pending.length) { setSync("Saved to your Google account"); return; }
+  setSync("Saving…");
+  try {
+    await api("POST", { entries: pending.map(strip) });
+    pending.forEach((e) => { e.synced = true; });
+    persistLocal(); renderDiary(); setSync("Saved to your Google account");
+  } catch {
+    setSync("Not saved online yet. Will try again.");
+  }
 }
 
 async function pullDown() {
   if (!cloud.user) return;
-  const { data, error } = await cloud.client.from("entries").select("*")
-    .order("entry_date", { ascending: false }).order("created_at", { ascending: false }).limit(2000);
-  if (error) { setSync("Couldn't load your diary. Check your connection."); return; }
-  const pending = entries.filter((e) => !e.synced);
-  const ids = new Set(pending.map((e) => e.id));
-  entries = [...pending, ...data.map(fromRow).filter((e) => !ids.has(e.id))];
-  sortEntries(); persistLocal(); renderDiary();
+  try {
+    const { entries: remote } = await api("GET");
+    const pending = entries.filter((e) => !e.synced);
+    const ids = new Set(pending.map((e) => e.id));
+    entries = [...pending, ...remote.filter((e) => !ids.has(e.id)).map((e) => ({ ...e, synced: true }))];
+    sortEntries(); persistLocal(); renderDiary();
+  } catch {
+    setSync("Couldn't load your diary. Check your connection.");
+  }
 }
 
 async function removeEntry(id) {
@@ -383,7 +395,7 @@ async function removeEntry(id) {
   const [gone] = entries.splice(idx, 1);
   persistLocal(); renderDiary();
   if (currentEntry?.id === id) show(EXAMPLE);
-  if (cloud.user && gone.synced) await cloud.client.from("entries").delete().eq("id", id);
+  if (cloud.user && gone.synced) { try { await api("DELETE", null, "?id=" + encodeURIComponent(id)); } catch {} }
   say(`Removed ${fmtDay(gone.date)} from your diary.`);
   const undo = document.createElement("button");
   undo.type = "button"; undo.className = "undo"; undo.textContent = "Undo";
@@ -451,151 +463,81 @@ function renderDiary() {
 }
 
 /* =========================================================
-   Account: email or phone, 6-digit code (Supabase Auth)
+   Account: Continue with Google (Netlify Identity)
    ========================================================= */
-const accLocal = $("accLocal"), accForm = $("accForm"), accIn = $("accIn");
-const accId = $("accId"), accIdLabel = $("accIdLabel"), accHint = $("accHint"), accCode = $("accCode");
-const idField = $("idField"), codeField = $("codeField"), accErr = $("accErr"), accGo = $("accGo"), accBack = $("accBack");
-const accWho = $("accWho"), accSync = $("accSync"), accModes = $("accModes");
-let accStage = "id", accTarget = null;
+const accLocal = $("accLocal"), accForm = $("accForm"), accIn = $("accIn"), accErr = $("accErr");
+const accWho = $("accWho"), accSync = $("accSync"), accPic = $("accPic"), accCloud = $("accCloud");
+const googleBtn = $("googleBtn");
 
 function setSync(msg) { accSync.textContent = msg; }
-function accMode() { return accForm.accMode.value; }
 
 function renderAccount() {
-  if (!cloud.ready) {
-    accLocal.hidden = false; accForm.hidden = true; accIn.hidden = true;
+  const canSignIn = cloud.ready && cloud.google;
+  accLocal.hidden = !!(cloud.user || canSignIn);
+  accForm.hidden = !canSignIn || !!cloud.user;
+  accIn.hidden = !cloud.user;
+  if (!cloud.user) {
     accLocal.textContent = inClaude
-      ? "Your diary is saved in this browser. Signing in with email or phone works on the live app."
+      ? "Your diary is saved in this browser. Google sign-in works on the live app."
       : "Your diary is saved on this device.";
     return;
   }
-  accLocal.hidden = true;
-  if (cloud.user) {
-    accForm.hidden = true; accIn.hidden = false;
-    accWho.textContent = cloud.user.email || (cloud.user.phone ? "+" + String(cloud.user.phone).replace(/^\+/, "") : "your account");
-  } else {
-    accIn.hidden = true; accForm.hidden = false;
-  }
+  const u = cloud.user;
+  accWho.textContent = u.name ? `${u.name} (${u.email})` : (u.email || "your Google account");
+  if (u.pictureUrl) { accPic.src = u.pictureUrl; accPic.hidden = false; accCloud.hidden = true; }
+  else { accPic.hidden = true; accCloud.hidden = false; }
 }
 
-function setModeUI() {
-  const phone = accMode() === "phone";
-  accIdLabel.textContent = phone ? "Phone number" : "Email";
-  accId.type = phone ? "tel" : "email";
-  accId.autocomplete = phone ? "tel" : "email";
-  accId.inputMode = phone ? "tel" : "email";
-  accId.placeholder = phone ? "98765 43210" : "you@example.com";
-  accHint.textContent = phone ? "Indian numbers get +91 added. For other countries, start with +." : "";
-  accHint.hidden = !phone;
-  accBack.textContent = phone ? "Use a different number" : "Use a different email";
-}
-accModes.addEventListener("change", () => { resetAcc(); setModeUI(); });
-
-function resetAcc() {
-  accStage = "id"; accTarget = null;
-  idField.hidden = false; codeField.hidden = true; accModes.hidden = false;
-  accCode.value = ""; accErr.hidden = true; accBack.hidden = true;
-  accGo.textContent = "Send code"; accGo.disabled = false;
-}
-accBack.addEventListener("click", () => { resetAcc(); accId.focus(); });
-
-function normalizePhone(v) {
-  const digits = v.replace(/[^\d+]/g, "");
-  if (/^\+\d{8,15}$/.test(digits)) return digits;
-  const d = digits.replace(/\D/g, "");
-  if (/^\d{10}$/.test(d)) return "+91" + d;
-  if (/^91\d{10}$/.test(d)) return "+" + d;
-  return null;
-}
-function authMessage(error, stage) {
-  const m = String(error?.message || "");
-  if (error?.status === 429 || /rate limit|too many/i.test(m)) return "Too many codes asked for. Wait a minute, then try again.";
-  if (/phone provider|sms|unsupported phone/i.test(m)) return "Phone sign-in isn't switched on yet. Please use email for now.";
-  if (stage === "code") return "That code didn't work. Check it, or go back and ask for a new one.";
-  return "Couldn't send the code. Check what you typed and try again.";
-}
-function showAccErr(msg) { accErr.textContent = msg; accErr.hidden = false; }
-
-accForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!cloud.client) return;
+googleBtn.addEventListener("click", () => {
+  if (!cloud.id) return;
   accErr.hidden = true;
-  const phone = accMode() === "phone";
-  if (accStage === "id") {
-    const raw = accId.value.trim();
-    const target = phone ? normalizePhone(raw) : raw.toLowerCase();
-    if (!target || (!phone && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target))) {
-      showAccErr(phone ? "Enter a valid phone number, like 98765 43210." : "Enter a valid email, like you@example.com.");
-      accId.focus(); return;
-    }
-    accGo.disabled = true; accGo.textContent = "Sending…";
-    const { error } = phone
-      ? await cloud.client.auth.signInWithOtp({ phone: target })
-      : await cloud.client.auth.signInWithOtp({ email: target, options: { shouldCreateUser: true, emailRedirectTo: location.origin } });
-    accGo.disabled = false;
-    if (error) { accGo.textContent = "Send code"; showAccErr(authMessage(error, "id")); return; }
-    accStage = "code"; accTarget = target;
-    idField.hidden = true; accModes.hidden = true; codeField.hidden = false; accBack.hidden = false;
-    accGo.textContent = "Verify";
-    say(`Code sent to ${target}.`);
-    accCode.focus();
-  } else {
-    const token = accCode.value.replace(/\D/g, "");
-    if (token.length !== 6) { showAccErr("Enter the 6-digit code we sent you."); accCode.focus(); return; }
-    accGo.disabled = true; accGo.textContent = "Checking…";
-    const { error } = phone
-      ? await cloud.client.auth.verifyOtp({ phone: accTarget, token, type: "sms" })
-      : await cloud.client.auth.verifyOtp({ email: accTarget, token, type: "email" });
-    accGo.disabled = false; accGo.textContent = "Verify";
-    if (error) { showAccErr(authMessage(error, "code")); return; }
-    resetAcc();
-    say("Signed in. Your diary now syncs to your account.");
+  googleBtn.disabled = true;
+  googleBtn.querySelector("span").textContent = "Opening Google…";
+  try { cloud.id.oauthLogin("google"); } // leaves the page and comes back signed in
+  catch {
+    googleBtn.disabled = false;
+    googleBtn.querySelector("span").textContent = "Continue with Google";
+    accErr.textContent = "Couldn't open Google sign-in. Please try again.";
+    accErr.hidden = false;
   }
 });
 
 $("signOut").addEventListener("click", async () => {
-  if (!cloud.client) return;
-  await cloud.client.auth.signOut();
-  // Synced entries live in the account; remove them from this device. Unsynced ones stay.
+  if (!cloud.id) return;
+  try { await cloud.id.logout(); } catch {}
+  cloud.user = null;
+  // Saved pages live in the Google account; remove them from this device. Unsaved ones stay.
   entries = entries.filter((e) => !e.synced);
-  persistLocal(); renderDiary();
+  persistLocal(); renderDiary(); renderAccount();
   if (currentEntry && !entries.some((e) => e.id === currentEntry.id)) show(EXAMPLE);
-  say("Signed out. Your diary is safe in your account.");
+  say("Signed out. Your diary is safe in your Google account.");
 });
 
 async function setUser(u) {
-  cloud.user = u;
+  cloud.user = u || null;
   renderAccount();
-  if (u) { await pushPending(); await pullDown(); }
-}
-
-function loadScript(src) {
-  return new Promise((ok, fail) => {
-    const s = document.createElement("script");
-    s.src = src; s.async = true; s.onload = ok; s.onerror = fail;
-    document.head.append(s);
-  });
+  if (cloud.user) { await pushPending(); await pullDown(); }
 }
 
 async function initCloud() {
   renderAccount();
   if (inClaude) return;
-  let cfg = null;
-  try { const r = await fetch("/api/config"); if (r.ok) cfg = await r.json(); } catch {}
-  if (!cfg?.supabaseUrl || !cfg?.supabaseAnonKey) return;
-  try { await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"); } catch { return; }
-  if (!window.supabase?.createClient) return;
-  cloud.client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  });
+  try { cloud.id = await import("./vendor/identity.js"); } catch { return; }
+  try {
+    const settings = await cloud.id.getSettings();
+    cloud.google = !!settings?.providers?.google;
+  } catch { return; } // Identity isn't switched on for this site yet
   cloud.ready = true;
-  setModeUI();
-  const { data: { session } } = await cloud.client.auth.getSession();
-  await setUser(session?.user || null);
-  cloud.client.auth.onAuthStateChange((_event, session) => {
-    const u = session?.user || null;
-    if ((u?.id || null) !== (cloud.user?.id || null)) setTimeout(() => setUser(u), 0);
+  try {
+    const back = await cloud.id.handleAuthCallback();
+    if (back?.user) say("Signed in. Your diary now saves to your Google account.");
+  } catch {
+    accErr.textContent = "Google sign-in didn't finish. Please try again.";
+    accErr.hidden = false;
+  }
+  await setUser(await cloud.id.getUser());
+  cloud.id.onAuthChange((_event, user) => {
+    if ((user?.id || null) !== (cloud.user?.id || null)) setTimeout(() => setUser(user), 0);
   });
   addEventListener("online", () => pushPending());
 }
@@ -606,28 +548,50 @@ initCloud();
 
 /* ---------- App: install + offline ---------- */
 const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const installBtn = $("install"), installHelp = $("installHelp"), installSteps = $("installSteps");
 if (!inClaude) {
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
   }
-  const installBtn = $("install");
   let deferred = null;
-  addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferred = e;
-    if (!standalone) installBtn.hidden = false;
-  });
+  installBtn.hidden = standalone;
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
+
+  function stepsForThisDevice() {
+    const ua = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (ios) return [
+      "Open this page in <strong>Safari</strong>.",
+      "Tap the <strong>Share</strong> button (the square with an arrow).",
+      "Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.",
+    ];
+    if (/android/i.test(ua)) return [
+      "Open this page in <strong>Chrome</strong>.",
+      "Tap the menu <strong>⋮</strong> at the top right.",
+      "Tap <strong>Add to Home screen</strong> or <strong>Install app</strong>, then <strong>Install</strong>.",
+    ];
+    return [
+      "Use <strong>Chrome</strong> or <strong>Edge</strong>.",
+      "Click the <strong>install icon</strong> at the right end of the address bar.",
+      "Or open the browser menu and choose <strong>Install Kaagaz</strong> (in Chrome: Cast, save and share → Install page as app).",
+    ];
+  }
+
   installBtn.addEventListener("click", async () => {
-    if (!deferred) return;
-    deferred.prompt();
-    const { outcome } = await deferred.userChoice.catch(() => ({}));
-    deferred = null;
-    installBtn.hidden = true;
-    if (outcome === "accepted") say("Kaagaz is on your home screen.");
+    if (deferred) {
+      deferred.prompt();
+      const { outcome } = await deferred.userChoice.catch(() => ({}));
+      deferred = null;
+      if (outcome === "accepted") { installBtn.hidden = true; say("Kaagaz is on your home screen."); }
+      return;
+    }
+    installSteps.innerHTML = stepsForThisDevice().map((t) => `<li>${t}</li>`).join("");
+    installHelp.hidden = false;
+    installHelp.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "nearest" });
+    $("installClose").focus();
   });
-  addEventListener("appinstalled", () => { installBtn.hidden = true; });
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  if (ios && !standalone) $("iosHint").hidden = false;
+  $("installClose").addEventListener("click", () => { installHelp.hidden = true; installBtn.focus(); });
+  addEventListener("appinstalled", () => { installBtn.hidden = true; installHelp.hidden = true; });
 }
 if (location.hash === "#diary") diarySec.focus();
 if (location.hash === "#entry") entry.focus();

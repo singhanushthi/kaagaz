@@ -7,9 +7,9 @@ Write your day. Get back a poem, in your own words. English, हिंदी or 
 ```
 kaagaz/
 ├── netlify.toml                    Netlify settings (publishes /public)
-├── supabase.sql                    Database setup for accounts + diary (run once)
+├── package.json                    Server packages (Netlify installs them automatically)
 ├── netlify/edge-functions/poem.js  POST /api/poem: turns a page into a poem (OpenAI, Groq, OpenRouter, DeepSeek or Claude)
-├── netlify/edge-functions/config.js GET /api/config: tells the app where the diary database is
+├── netlify/functions/diary.mjs     /api/diary: saves each signed-in person's diary (Netlify Blobs)
 └── public/
     ├── index.html                  The page
     ├── styles.css                  Design (light + dark)
@@ -17,12 +17,13 @@ kaagaz/
     ├── prompt.js                   The poet's instructions (shared)
     ├── manifest.webmanifest        Makes it installable as an app
     ├── sw.js                       Offline support (opens instantly, works without internet)
+    ├── vendor/identity.js          Google sign-in library (Netlify Identity)
     ├── icons/                      App icons (Android, iPhone, maskable)
     └── favicon.svg
 ```
 
 Your API key stays on Netlify's server. Visitors never see it. Diary pages are saved on the person's device,
-and in their own account (Supabase) once they sign in with email or phone.
+and to their Google account on Kaagaz once they tap **Continue with Google**. Everything runs on Netlify.
 
 ## Put it live on Netlify (free)
 
@@ -69,7 +70,6 @@ Optional settings:
 |---|---|
 | `AI_MODEL` | Use a different model from that provider (copy the exact model name from their docs) |
 | `AI_PROVIDER` | If you added several keys, pick one: `groq`, `openrouter`, `openai`, `deepseek`, `claude` or `custom` |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Turn on accounts and the synced diary (see below) |
 
 **Tips**
 - Free models change often. If OpenRouter says a model is unavailable, pick another one ending in `:free`
@@ -112,33 +112,28 @@ and opens even without internet (writing a new poem needs internet).
 The iPhone App Store also works through PWABuilder, but needs a Mac and an Apple Developer
 account ($99/year). Add to Home Screen is free and gives almost the same experience.
 
-## Accounts: save the diary with email or phone (Supabase)
+## Accounts: "Continue with Google"
 
 Without this, every page and poem is still saved in the diary, but only on that phone.
-With it, people sign in with a 6-digit code (no password) and their diary opens on any device.
+With it, people tap **Continue with Google** and their diary opens on any phone or computer.
 
-1. Create a free project at https://supabase.com (pick the **Mumbai** region for India).
-2. **SQL Editor → New query**: paste everything from `supabase.sql`, click **Run**.
-3. **Project Settings → API**: copy the **Project URL** and the **anon public** key.
-   In Netlify add them as `SUPABASE_URL` and `SUPABASE_ANON_KEY`, then redeploy.
-4. **Authentication → URL Configuration**: set **Site URL** to your Netlify address
-   (for example `https://kaagaz.netlify.app`).
-5. **Email codes** (works on the free plan):
-   **Authentication → Email Templates → Magic Link**, make the message include the code, for example:
-   ```html
-   <h2>Your Kaagaz code</h2>
-   <p>Enter this code in the app: <strong>{{ .Token }}</strong></p>
-   <p>Or tap to sign in: <a href="{{ .ConfirmationURL }}">Open Kaagaz</a></p>
-   ```
-   Supabase's built-in email sender is limited to a few emails per hour. Before sharing widely, connect
-   a free email sender under **Project Settings → Authentication → SMTP Settings** (Resend or Brevo both have free plans).
-6. **Phone codes (SMS)** cost money per message, so they are off until you choose to turn them on:
-   **Authentication → Sign In / Providers → Phone**, enable it and connect an SMS provider
-   (Twilio, MessageBird, Vonage or Textlocal). Until then, the app tells people to use email.
+1. In Netlify open your site → **Project configuration → Identity** → **Enable Identity**.
+2. Under **Registration → External providers**, click **Add provider → Google**, keep
+   **Use default configuration**, and save.
+3. Under **Registration preferences**, keep **Open** so anyone can sign up.
+4. Redeploy (Deploys → Trigger deploy). The Google button appears in **My diary**.
+
+Nothing else to set up: the diary is stored in **Netlify Blobs** on your site, one record per page,
+under each person's own account ID.
+
+Notes
+- Google's sign-in screen will say "Netlify" while you use the default configuration. To show "Kaagaz"
+  instead, create your own OAuth client in Google Cloud Console and paste its ID and secret in the same
+  Google provider settings (optional).
+- Sign-in only works on the live site or a Deploy Preview, not with `netlify dev` on your computer.
 
 ### How the data is protected
-- Each diary page is one row in the `entries` table: date, what they wrote, the poem.
-- Row Level Security means a signed-in person can only read, add, change or delete **their own** rows.
-- The anon key in the app is meant to be public; it can't read anyone's diary without that person's sign-in.
-- As the project owner, you can see rows in the Supabase dashboard. Say so in a short privacy note
-  before you launch publicly, and don't browse people's entries.
+- The diary function checks who is signed in on every request and only reads or writes that person's pages.
+- Requests from other websites are refused.
+- As the site owner you could technically see stored pages in Netlify's Blobs browser. Add a short
+  privacy note before launching publicly, and don't open people's entries.
