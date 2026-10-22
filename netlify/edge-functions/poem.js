@@ -83,8 +83,8 @@ async function callOpenAICompatible(p, prompt) {
       model: p.model,
       // generous so "thinking" models still have room left for the poem
       [p.tokensField]: 4000,
-      // a little more creative than default, still coherent
-      ...(p.noTemperature ? {} : { temperature: 0.9 }),
+      // a little creative, but stays faithful to what they wrote
+      ...(p.noTemperature ? {} : { temperature: 0.7 }),
       messages: [{ role: "user", content: prompt }],
     }),
   });
